@@ -1,13 +1,13 @@
 use euler::*;
-use l_system::{Runner, Turtle, TurtleAction, TurtleToken};
+use l_system::lsystems::{LSystem, LToken};
+use l_system::turtle::{TurtleAction, TurtleDrawer, TurtleToken};
 use raylib::color::Color;
 use std::f32::consts::PI;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 enum DragonToken {
     Forward,
-    RotateLeft,
-    RotateRight,
+    Rotate(f32),
     X,
     Y,
     Push,
@@ -15,28 +15,26 @@ enum DragonToken {
 }
 
 impl TurtleToken for DragonToken {
-    fn apply(token: &Self) -> &[Self] {
-        use DragonToken as DT;
-        match *token {
-            DT::Forward => &[DT::Forward],
-            DT::RotateLeft => &[DT::RotateLeft],
-            DT::RotateRight => &[DT::RotateRight],
-            DT::X => &[DT::X, DT::RotateLeft, DT::Y, DT::Forward],
-            DT::Y => &[DT::Forward, DT::X, DT::RotateRight, DT::Y],
-            DT::Push => &[DT::Push],
-            DT::Pop => &[DT::Pop],
-        }
-    }
-    fn act(t: Self) -> &'static [TurtleAction] {
+    fn action(t: Self) -> Vec<TurtleAction> {
         use DragonToken as DT;
         use TurtleAction as TA;
         match t {
-            DT::Forward => &[TA::Move(3.0)],
-            DT::RotateLeft => &[TA::Rotate(PI / 2.0)],
-            DT::RotateRight => &[TA::Rotate(-PI / 2.0)],
-            DT::Push => &[TA::Push],
-            DT::Pop => &[TA::Pop],
-            _ => &[],
+            DT::Forward => vec![TA::Move(3.0)],
+            DT::Rotate(rot) => vec![TA::Rotate(rot)],
+            DT::Push => vec![TA::Push],
+            DT::Pop => vec![TA::Pop],
+            _ => vec![],
+        }
+    }
+}
+
+impl LToken for DragonToken {
+    fn apply(token: Self) -> Vec<Self> {
+        use DragonToken as DT;
+        match token {
+            DT::X => vec![DT::X, DT::Rotate(PI / 2.0), DT::Y, DT::Forward],
+            DT::Y => vec![DT::Forward, DT::X, DT::Rotate(-PI / 2.0), DT::Y],
+            _ => vec![token],
         }
     }
 }
@@ -66,17 +64,20 @@ fn lerp(c1: Color, c2: Color, k: f32) -> Color {
 fn main() {
     use DragonToken as DT;
     use TurtleAction as TA;
-    let turtle = Turtle::new(
+    let turtle = TurtleDrawer::new(
         vec2![1000.0, 1000.0],
         vec2![1.0, 1.0],
         vec2![300.0, 700.0],
         Color::BLACK,
     );
 
-    let runner = Runner::from(vec![DT::Push, DT::Forward, DT::X, DT::Pop]);
+    let system = LSystem::from(vec![DT::Push, DT::Forward, DT::X, DT::Pop]);
+
+    let sequence = system.iterate(15);
 
     let mut actions = vec![TA::SetThick(1.0)];
-    actions.extend(runner.actions(15));
+
+    actions.extend(TurtleToken::actions(sequence));
 
     let times_forward = actions
         .iter()
@@ -98,5 +99,5 @@ fn main() {
         }
     }
 
-    turtle.run(new_actions);
+    turtle.run(&new_actions);
 }
