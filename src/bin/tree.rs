@@ -37,15 +37,15 @@ impl TurtleToken for TreeToken {
             TT::Pop => &[TT::Pop],
         }
     }
-    fn act(t: Self) -> &'static [TurtleAction] {
+    fn act(token: Self) -> &'static [TurtleAction] {
         use TreeToken as TT;
         use TurtleAction as TA;
-        match t {
-            TT::Leaf => &[TA::SetColot(Color::LIME), TA::Move(10.0)],
-            TT::NewWood => &[TA::SetColot(Color::BROWN), TA::Move(10.0)],
-            TT::OldWood => &[TA::SetColot(Color::BLACK), TA::Move(10.0)],
-            TT::RotateLeft => &[TA::Rotate(PI / 3.0)],
-            TT::RotateRight => &[TA::Rotate(-PI / 3.0)],
+        match token {
+            TT::Leaf => &[TA::SetColor(Color::LIME), TA::Move(20.0)],
+            TT::NewWood => &[TA::SetColor(Color::BROWN), TA::Move(20.0)],
+            TT::OldWood => &[TA::SetColor(Color::BLACK), TA::Move(20.0)],
+            TT::RotateLeft => &[TA::Rotate(PI / 6.0)],
+            TT::RotateRight => &[TA::Rotate(-PI / 6.0)],
             TT::Push => &[TA::Push],
             TT::Pop => &[TA::Pop],
         }
@@ -56,22 +56,14 @@ fn main() {
     use TreeToken as TT;
     let turtle = Turtle::new(
         vec2![1000.0, 1000.0],
-        vec2![1.0, 1.0],
-        vec2![500.0, 500.0],
+        vec2![0.5, 0.5],
+        vec2![500.0, 700.0],
         Color::WHITE,
     );
 
     let runner = Runner::from(vec![TT::Leaf]);
 
-    let sequence = runner.iterate(5);
-
-    let actions = sequence
-        .into_iter()
-        .map(TurtleToken::act)
-        .fold(Vec::new(), |mut acc, elem| {
-            acc.extend_from_slice(elem);
-            acc
-        });
+    let actions = runner.actions(10);
 
     turtle.run(actions);
 }

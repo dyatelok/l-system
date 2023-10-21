@@ -21,8 +21,9 @@ pub enum TurtleAction {
     LowerPen,
     RaisePen,
     Rotate(f32),
+    SetThick(f32),
     Move(f32),
-    SetColot(Color),
+    SetColor(Color),
     Push,
     Pop,
 }
@@ -33,6 +34,7 @@ pub struct TurtleSlice {
     position: Vec2,
     direction: f32,
     drawing: bool,
+    thickness: f32,
 }
 
 impl TurtleSlice {
@@ -42,6 +44,7 @@ impl TurtleSlice {
             position: vec2!(0.0, 0.0),
             direction: PI / 2.0,
             drawing: true,
+            thickness: 3.0,
         }
     }
     fn lower_pen(&mut self) {
@@ -72,6 +75,9 @@ impl TurtleSlice {
         } else if self.direction < 0.0 {
             self.direction += TAU;
         }
+    }
+    fn set_thickness(&mut self, thickness: f32) {
+        self.thickness = thickness;
     }
 }
 
@@ -108,8 +114,8 @@ impl Turtle {
             TA::LowerPen => self.turtle.lower_pen(),
             TA::RaisePen => self.turtle.raise_pen(),
             TA::Rotate(angle) => self.turtle.rotate(*angle),
-            TA::Move(length) => match self.turtle.move_forward(*length) {
-                Some(line) => {
+            TA::Move(length) => {
+                if let Some(line) = self.turtle.move_forward(*length) {
                     drawer.draw_line_ex(
                         Vector2 {
                             x: self.origin.x + self.scale.x * line.start.x,
@@ -119,13 +125,13 @@ impl Turtle {
                             x: self.origin.x + self.scale.x * line.end.x,
                             y: self.origin.y - self.scale.y * line.end.y,
                         },
-                        3.0,
+                        self.turtle.thickness,
                         line.color,
                     );
                 }
-                None => {}
-            },
-            TA::SetColot(color) => self.turtle.set_color(*color),
+            }
+            TA::SetThick(thickness) => self.turtle.set_thickness(*thickness),
+            TA::SetColor(color) => self.turtle.set_color(*color),
             TA::Push => self.slices.push(self.turtle),
             TA::Pop => self.turtle = self.slices.pop().unwrap(),
         }
@@ -178,5 +184,14 @@ impl<T: Eq + TurtleToken + Clone> Runner<T> {
             Self::apply_once(&mut tokens);
         }
         tokens
+    }
+    pub fn actions(&self, n: usize) -> Vec<TurtleAction> {
+        self.iterate(n)
+            .into_iter()
+            .map(TurtleToken::act)
+            .fold(Vec::new(), |mut acc, elem| {
+                acc.extend_from_slice(elem);
+                acc
+            })
     }
 }
