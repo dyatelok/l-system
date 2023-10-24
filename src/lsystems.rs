@@ -1,6 +1,47 @@
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
+mod rules_macro {
+    #[macro_export]
+    macro_rules! rules_helper {
+        () => {{(vec![1.0],vec![])}};
+        ( $rule:expr ) => {{
+            (vec![1.0],vec![$rule])
+        }};
+        ( $( $rule:expr ),+ $(,)? ) => {{
+            let mut bounds: Vec<f32> = Vec::new();
+            let mut rules = Vec::new();
+            let mut summ: f32 = 0.0;
+            $(
+                let (prob,rule) = $rule;
+                summ += prob;
+                bounds.push(summ);
+                rules.push(rule);
+            )*
+            if summ != 1.0 {
+                panic!("probabilies must add to 1.0, but the summ is {}",summ);
+            }
+            (bounds,rules)
+        }};
+    }
+
+    #[macro_export]
+    macro_rules! rules {
+        ( $rand:expr; $($rule:expr),+ $(,)?) => {{
+            let bounds_patterns = $crate::rules_helper!($($rule),+);
+            let (bounds, patterns) = bounds_patterns;
+            let mut ret = None;
+            for (bound, pattern) in std::iter::zip(bounds, patterns) {
+                if $rand < bound {
+                    ret = Some(pattern);
+                    break;
+                }
+            }
+            ret.unwrap_or_else(|| panic!("Your random value is bigger than 1. Random value: {}",$rand))
+        }};
+    }
+}
+
 pub trait LTokenStochastic: Sized {
     fn apply(token: Self, rand: f32) -> Vec<Self>;
 }
