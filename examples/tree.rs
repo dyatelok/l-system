@@ -36,9 +36,7 @@ impl LTokenStochastic for TreeToken {
         use TreeToken as TT;
         match token {
             TT::Leaf => rules![
-                rand;
-                (
-                    0.7,
+                rand; 2; {0.7, 0.3}; {
                     vec![
                         TT::Push,
                         TT::NewWood,
@@ -50,9 +48,6 @@ impl LTokenStochastic for TreeToken {
                         TT::Leaf,
                         TT::Pop,
                     ],
-                ),
-                (
-                    0.3,
                     vec![
                         TT::Push,
                         TT::NewWood,
@@ -67,7 +62,7 @@ impl LTokenStochastic for TreeToken {
                         TT::Leaf,
                         TT::Pop,
                     ],
-                ),
+                };
             ],
             TT::NewWood => vec![TT::OldWood, TT::NewWood],
             _ => vec![token],

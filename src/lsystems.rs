@@ -1,45 +1,23 @@
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
-mod rules_macro {
-    #[macro_export]
-    macro_rules! rules_helper {
-        () => {{(vec![1.0],vec![])}};
-        ( $rule:expr ) => {{
-            (vec![1.0],vec![$rule])
-        }};
-        ( $( $rule:expr ),+ $(,)? ) => {{
-            let mut bounds: Vec<f32> = Vec::new();
-            let mut rules = Vec::new();
-            let mut summ: f32 = 0.0;
-            $(
-                let (prob,rule) = $rule;
-                summ += prob;
-                bounds.push(summ);
-                rules.push(rule);
-            )*
-            if summ != 1.0 {
-                panic!("probabilies must add to 1.0, but the summ is {}",summ);
+#[macro_export]
+macro_rules! rules {
+    ( $rand:expr; $num:expr; {$($prob:expr),+ $(,)?}; {$($rule:expr),+ $(,)?} $(;)?) => {{
+        let bounds: [f32; $num] = $crate::accu::accumulate([$($prob),+]);
+        let patterns = vec![$($rule),+];
+        if patterns.len() != $num {
+            panic!("number of rules {} doesn't match the declared number {}",patterns.len(),$num);
+        }
+        let mut ret = None;
+        for (bound, pattern) in std::iter::zip(bounds.to_vec(), patterns) {
+            if $rand < bound {
+                ret = Some(pattern);
+                break;
             }
-            (bounds,rules)
-        }};
-    }
-
-    #[macro_export]
-    macro_rules! rules {
-        ( $rand:expr; $($rule:expr),+ $(,)?) => {{
-            let bounds_patterns = $crate::rules_helper!($($rule),+);
-            let (bounds, patterns) = bounds_patterns;
-            let mut ret = None;
-            for (bound, pattern) in std::iter::zip(bounds, patterns) {
-                if $rand < bound {
-                    ret = Some(pattern);
-                    break;
-                }
-            }
-            ret.unwrap_or_else(|| panic!("Your random value is bigger than 1. Random value: {}",$rand))
-        }};
-    }
+        }
+        ret.unwrap_or_else(|| panic!("Your random value is bigger than 1. Random value: {}",$rand))
+    }};
 }
 
 pub trait LTokenStochastic: Sized {

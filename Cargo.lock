@@ -88,6 +88,7 @@ name = "l-system"
 version = "0.1.0"
 dependencies = [
  "euler",
+ "lazy_static",
  "rand 0.8.5",
  "rand_chacha",
  "raylib",
