@@ -6,7 +6,7 @@ My goal was to make it as easy as posslible to write L-systems for the programme
 
 To make an L-system you should only implement two traits for for your token. Here's an example for the dragon curve:
 
-```
+```rust
 #[derive(Copy, Clone, PartialEq)]
 enum DragonToken {
     Forward,
